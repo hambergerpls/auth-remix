@@ -158,7 +158,7 @@
  * ```
  *
  *
- * @module auth-remix
+ * @module auth-remix/node
  */
 
 import {
@@ -186,14 +186,12 @@ export type RemixAuthConfig = Omit<AuthConfig, "raw">
 
 export function RemixAuth(config: RemixAuthConfig) {
   const loader: LoaderFunction = async ({ request, params, context }) => {
-    // @ts-expect-error
     setEnvDefaults(process.env, config)
     config.basePath = getBasePath({ request, params })
     return await Auth(request, config)
   }
 
   const action: ActionFunction = async ({ request, params, context }) => {
-    // @ts-expect-error
     setEnvDefaults(process.env, config)
     config.basePath = getBasePath({ request, params })
     return await Auth(request, config)
@@ -202,7 +200,6 @@ export function RemixAuth(config: RemixAuthConfig) {
   const getCsrfToken = async (
     { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
   ): Promise<Response> => {
-    // @ts-expect-error
     setEnvDefaults(process.env, config)
     const url = createActionURL(
       "csrf",
@@ -226,7 +223,6 @@ export function RemixAuth(config: RemixAuthConfig) {
   const getSession = async (
     { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
   ): GetSessionResult => {
-    // @ts-expect-error
     setEnvDefaults(process.env, config)
     const url = createActionURL(
       "session",
@@ -257,7 +253,6 @@ export function RemixAuth(config: RemixAuthConfig) {
     options: ({ redirectTo?: string }) = {},
     authorizationParams?: string[][] | Record<string, string> | string | URLSearchParams,
   ) => {
-    // @ts-expect-error
     setEnvDefaults(process.env, config)
     const headers = new Headers(request.headers)
     const {
@@ -317,7 +312,6 @@ authorizationParams
   { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
   options: { redirectTo?: string } = {},
 ) => {
-  // @ts-expect-error
   setEnvDefaults(process.env, config)
   const headers = new Headers( request.headers )
   headers.set("Content-Type", "application/x-www-form-urlencoded")

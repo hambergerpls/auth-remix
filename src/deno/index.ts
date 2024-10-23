@@ -158,7 +158,7 @@
  * ```
  *
  *
- * @module auth-remix
+ * @module auth-remix/deno
  */
 
 import {
@@ -208,7 +208,8 @@ export function RemixAuth(config: RemixAuthConfig) {
       "csrf",
       request.headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
       request.headers,
-      process.env,
+    // @ts-expect-error
+      Deno.env.toObject(),
       config
     )
 
@@ -232,7 +233,8 @@ export function RemixAuth(config: RemixAuthConfig) {
       "session",
       request.headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
       request.headers,
-      process.env,
+    // @ts-expect-error
+      Deno.env.toObject(),
       config
     )
 
@@ -269,7 +271,8 @@ export function RemixAuth(config: RemixAuthConfig) {
       "signin",
       headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
       headers,
-      process.env,
+    // @ts-expect-error
+      Deno.env.toObject(),
       config
     )
 
@@ -326,7 +329,8 @@ authorizationParams
     "signout",
     headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
     headers,
-    process.env,
+    // @ts-expect-error
+    Deno.env.toObject(),
     config
   )
   const callbackUrl = options?.redirectTo ?? headers.get("Referer") ?? "/"
