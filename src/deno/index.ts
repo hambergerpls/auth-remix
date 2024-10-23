@@ -169,7 +169,7 @@ import {
   customFetch,
 } from "@auth/core"
 import type { Session } from "@auth/core/types"
-import { type LoaderFunction, type LoaderFunctionArgs, type ActionFunction, type ActionFunctionArgs, redirect } from "@remix-run/node"
+import { type LoaderFunction, type LoaderFunctionArgs, type ActionFunction, type ActionFunctionArgs, redirect } from "@remix-run/deno"
 import { BuiltInProviderType, ProviderType } from "../providers/index.js"
 
 export { customFetch }

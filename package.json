@@ -16,6 +16,14 @@
       "types": "./dist/providers/*.d.ts",
       "import": "./dist/providers/*.js"
     },
+    "./cloudflare": {
+      "types": "./dist/cloudflare/index.d.ts",
+      "import": "./dist/cloudflare/index.js"
+    },
+    "./deno": {
+      "types": "./dist/deno/index.d.ts",
+      "import": "./dist/deno/index.js"
+    },
     "./node": {
       "types": "./dist/node/index.d.ts",
       "import": "./dist/node/index.js"
