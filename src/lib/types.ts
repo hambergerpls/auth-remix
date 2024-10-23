@@ -4,5 +4,5 @@ import { Awaitable } from "@auth/core/types"
 
 
 export type RemixAuthConfig = Omit<AuthConfig, "raw" | "adapter"> & {
-  adapter: Adapter | ( (env: unknown) => Awaitable<Adapter> )
+  adapter?: Adapter | ( (env: unknown) => Awaitable<Adapter> )
 }
