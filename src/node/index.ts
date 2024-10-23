@@ -185,13 +185,13 @@ export type {
 
 export function RemixAuth(config: RemixAuthConfig) {
   const loader: LoaderFunction = async ({ request, params, context }) => {
-    setEnvDefaults(process.env, config)
+    await setEnvDefaults(process.env, config)
     config.basePath = getBasePath({ request, params })
     return await Auth(request, config as AuthConfig)
   }
 
   const action: ActionFunction = async ({ request, params, context }) => {
-    setEnvDefaults(process.env, config)
+    await setEnvDefaults(process.env, config)
     config.basePath = getBasePath({ request, params })
     return await Auth(request, config as AuthConfig)
   }
@@ -199,7 +199,7 @@ export function RemixAuth(config: RemixAuthConfig) {
   const getCsrfToken = async (
     { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
   ): Promise<Response> => {
-    setEnvDefaults(process.env, config)
+    await setEnvDefaults(process.env, config)
     const url = createActionURL(
       "csrf",
       request.headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
@@ -222,7 +222,7 @@ export function RemixAuth(config: RemixAuthConfig) {
   const getSession = async (
     { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
   ): GetSessionResult => {
-    setEnvDefaults(process.env, config)
+    await setEnvDefaults(process.env, config)
     const url = createActionURL(
       "session",
       request.headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
@@ -252,7 +252,7 @@ export function RemixAuth(config: RemixAuthConfig) {
     options: ({ redirectTo?: string }) = {},
     authorizationParams?: string[][] | Record<string, string> | string | URLSearchParams,
   ) => {
-    setEnvDefaults(process.env, config)
+    await setEnvDefaults(process.env, config)
     const headers = new Headers(request.headers)
     const {
       redirectTo,
@@ -311,7 +311,7 @@ authorizationParams
   { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
   options: { redirectTo?: string } = {},
 ) => {
-  setEnvDefaults(process.env, config)
+  await setEnvDefaults(process.env, config)
   const headers = new Headers( request.headers )
   headers.set("Content-Type", "application/x-www-form-urlencoded")
 

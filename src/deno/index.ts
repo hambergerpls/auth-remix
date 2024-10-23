@@ -186,14 +186,14 @@ export type {
 export function RemixAuth(config: RemixAuthConfig) {
   const loader: LoaderFunction = async ({ request, params, context }) => {
     // @ts-expect-error
-    setEnvDefaults(Deno.env.toObject(), config)
+    await setEnvDefaults(Deno.env.toObject(), config)
     config.basePath = getBasePath({ request, params })
     return await Auth(request, config as AuthConfig)
   }
 
   const action: ActionFunction = async ({ request, params, context }) => {
     // @ts-expect-error
-    setEnvDefaults(Deno.env.toObject(), config)
+    await setEnvDefaults(Deno.env.toObject(), config)
     config.basePath = getBasePath({ request, params })
     return await Auth(request, config as AuthConfig)
   }
@@ -202,7 +202,7 @@ export function RemixAuth(config: RemixAuthConfig) {
     { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
   ): Promise<Response> => {
     // @ts-expect-error
-    setEnvDefaults(Deno.env.toObject(), config)
+    await setEnvDefaults(Deno.env.toObject(), config)
     const url = createActionURL(
       "csrf",
       request.headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
@@ -227,7 +227,7 @@ export function RemixAuth(config: RemixAuthConfig) {
     { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
   ): GetSessionResult => {
     // @ts-expect-error
-    setEnvDefaults(Deno.env.toObject(), config)
+    await setEnvDefaults(Deno.env.toObject(), config)
     const url = createActionURL(
       "session",
       request.headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
@@ -259,7 +259,7 @@ export function RemixAuth(config: RemixAuthConfig) {
     authorizationParams?: string[][] | Record<string, string> | string | URLSearchParams,
   ) => {
     // @ts-expect-error
-    setEnvDefaults(Deno.env.toObject(), config)
+    await setEnvDefaults(Deno.env.toObject(), config)
     const headers = new Headers(request.headers)
     const {
       redirectTo,
@@ -320,7 +320,7 @@ authorizationParams
   options: { redirectTo?: string } = {},
 ) => {
   // @ts-expect-error
-  setEnvDefaults(Deno.env.toObject(), config)
+  await setEnvDefaults(Deno.env.toObject(), config)
   const headers = new Headers( request.headers )
   headers.set("Content-Type", "application/x-www-form-urlencoded")
 
