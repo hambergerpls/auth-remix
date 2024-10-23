@@ -164,13 +164,14 @@
 import {
   Auth,
   type AuthConfig,
-  setEnvDefaults,
   createActionURL,
   customFetch,
 } from "@auth/core"
 import type { Session } from "@auth/core/types"
 import { type LoaderFunction, type LoaderFunctionArgs, type ActionFunction, type ActionFunctionArgs, redirect } from "@remix-run/deno"
 import { BuiltInProviderType, ProviderType } from "../providers/index.js"
+import { setEnvDefaults } from "src/lib/utils.js"
+import { RemixAuthConfig } from "src/lib/types.js"
 
 export { customFetch }
 export { AuthError, CredentialsSignin } from "@auth/core/errors"
@@ -182,21 +183,19 @@ export type {
   User,
 } from "@auth/core/types"
 
-export type RemixAuthConfig = Omit<AuthConfig, "raw">
-
 export function RemixAuth(config: RemixAuthConfig) {
   const loader: LoaderFunction = async ({ request, params, context }) => {
     // @ts-expect-error
     setEnvDefaults(Deno.env.toObject(), config)
     config.basePath = getBasePath({ request, params })
-    return await Auth(request, config)
+    return await Auth(request, config as AuthConfig)
   }
 
   const action: ActionFunction = async ({ request, params, context }) => {
     // @ts-expect-error
     setEnvDefaults(Deno.env.toObject(), config)
     config.basePath = getBasePath({ request, params })
-    return await Auth(request, config)
+    return await Auth(request, config as AuthConfig)
   }
 
   const getCsrfToken = async (
@@ -215,7 +214,7 @@ export function RemixAuth(config: RemixAuthConfig) {
 
     const response = await Auth(
       new Request(url),
-      config
+      config as AuthConfig
     )
 
     if (!response.ok) {
@@ -240,7 +239,7 @@ export function RemixAuth(config: RemixAuthConfig) {
 
     const response = await Auth(
       new Request(url, { headers: { cookie: request.headers.get("cookie") ?? "" } }),
-      config
+      config as AuthConfig
     )
 
     const { status = 200 } = response
@@ -311,7 +310,7 @@ authorizationParams
     headers.set("Content-Type", "application/x-www-form-urlencoded")
     const body = new URLSearchParams({ ...Object.fromEntries(await request.formData()), callbackUrl })
     const newReq = new Request(url, { method: "POST", headers, body })
-    const res = await Auth(newReq, { ...config })
+    const res = await Auth(newReq, { ...config as AuthConfig })
 
     return res
   }
@@ -337,7 +336,7 @@ authorizationParams
   const body = new URLSearchParams({ ...Object.fromEntries(await request.formData()), callbackUrl })
   const newReq = new Request(url, { method: "POST", headers, body })
 
-  const res = await Auth(newReq, { ...config })
+  const res = await Auth(newReq, { ...config as AuthConfig })
 
   return res
 }
