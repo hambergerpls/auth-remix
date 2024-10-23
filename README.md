@@ -8,8 +8,8 @@ It provides a simple way to add authentication to your Remix app in a few lines 
 ## TODO
 
 - [x] `auth-remix/node`
-- [ ] `auth-remix/cloudflare`
-- [ ] `auth-remix/deno`
+- [x] `auth-remix/cloudflare`
+- [x] `auth-remix/deno`
 - [x] `examples/node`
 - [ ] `examples/cloudflare`
 - [ ] `examples/deno`
