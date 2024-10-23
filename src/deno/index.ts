@@ -185,26 +185,29 @@ export type {
 export type RemixAuthConfig = Omit<AuthConfig, "raw">
 
 export function RemixAuth(config: RemixAuthConfig) {
-  const loader: LoaderFunction = async (args) => {
-    config.basePath = getBasePath(args)
-    setEnvDefaults(process.env, config)
-    return await Auth(args.request, config)
+  const loader: LoaderFunction = async ({ request, params, context }) => {
+    // @ts-expect-error
+    setEnvDefaults(Deno.env.toObject(), config)
+    config.basePath = getBasePath({ request, params })
+    return await Auth(request, config)
   }
 
-  const action: ActionFunction = async (args) => {
-    config.basePath = getBasePath(args)
-    setEnvDefaults(process.env, config)
-    return await Auth(args.request, config)
+  const action: ActionFunction = async ({ request, params, context }) => {
+    // @ts-expect-error
+    setEnvDefaults(Deno.env.toObject(), config)
+    config.basePath = getBasePath({ request, params })
+    return await Auth(request, config)
   }
 
   const getCsrfToken = async (
-    req: Request,
+    { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
   ): Promise<Response> => {
-    setEnvDefaults(process.env, config)
+    // @ts-expect-error
+    setEnvDefaults(Deno.env.toObject(), config)
     const url = createActionURL(
       "csrf",
-      req.headers.get("x-forwarded-proto") ?? new URL( req.url ).protocol,
-      req.headers,
+      request.headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
+      request.headers,
       process.env,
       config
     )
@@ -221,19 +224,20 @@ export function RemixAuth(config: RemixAuthConfig) {
   }
 
   const getSession = async (
-    req: Request,
+    { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
   ): GetSessionResult => {
-    setEnvDefaults(process.env, config)
+    // @ts-expect-error
+    setEnvDefaults(Deno.env.toObject(), config)
     const url = createActionURL(
       "session",
-      req.headers.get("x-forwarded-proto") ?? new URL( req.url ).protocol,
-      req.headers,
+      request.headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
+      request.headers,
       process.env,
       config
     )
 
     const response = await Auth(
-      new Request(url, { headers: { cookie: req.headers.get("cookie") ?? "" } }),
+      new Request(url, { headers: { cookie: request.headers.get("cookie") ?? "" } }),
       config
     )
 
@@ -248,12 +252,14 @@ export function RemixAuth(config: RemixAuthConfig) {
 
 
   const signIn = async (
-    req: Request,
+    { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
     provider?: BuiltInProviderType,
     options: ({ redirectTo?: string }) = {},
     authorizationParams?: string[][] | Record<string, string> | string | URLSearchParams,
   ) => {
-    const headers = new Headers(req.headers)
+    // @ts-expect-error
+    setEnvDefaults(Deno.env.toObject(), config)
+    const headers = new Headers(request.headers)
     const {
       redirectTo,
     } = options
@@ -261,7 +267,7 @@ export function RemixAuth(config: RemixAuthConfig) {
     const callbackUrl = redirectTo?.toString() ?? headers.get("Referer") ?? "/"
     const signInURL = createActionURL(
       "signin",
-      headers.get("x-forwarded-proto") ?? new URL( req.url ).protocol,
+      headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
       headers,
       process.env,
       config
@@ -300,7 +306,7 @@ authorizationParams
     }
 
     headers.set("Content-Type", "application/x-www-form-urlencoded")
-    const body = new URLSearchParams({ ...Object.fromEntries(await req.formData()), callbackUrl })
+    const body = new URLSearchParams({ ...Object.fromEntries(await request.formData()), callbackUrl })
     const newReq = new Request(url, { method: "POST", headers, body })
     const res = await Auth(newReq, { ...config })
 
@@ -308,21 +314,23 @@ authorizationParams
   }
 
   const signOut = async (
-  req: Request,
+  { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
   options: { redirectTo?: string } = {},
 ) => {
-  const headers = new Headers( req.headers )
+  // @ts-expect-error
+  setEnvDefaults(Deno.env.toObject(), config)
+  const headers = new Headers( request.headers )
   headers.set("Content-Type", "application/x-www-form-urlencoded")
 
   const url = createActionURL(
     "signout",
-    headers.get("x-forwarded-proto") ?? new URL( req.url ).protocol,
+    headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
     headers,
     process.env,
     config
   )
   const callbackUrl = options?.redirectTo ?? headers.get("Referer") ?? "/"
-  const body = new URLSearchParams({ ...Object.fromEntries(await req.formData()), callbackUrl })
+  const body = new URLSearchParams({ ...Object.fromEntries(await request.formData()), callbackUrl })
   const newReq = new Request(url, { method: "POST", headers, body })
 
   const res = await Auth(newReq, { ...config })
@@ -336,11 +344,11 @@ authorizationParams
 export type GetSessionResult = Promise<Session | null>
 
 
-function getBasePath(args: LoaderFunctionArgs | ActionFunctionArgs) {
-  const url = new URL(args.request.url);
-  const [ params ] = Object.values( args.params )
-  if (!params) {
+export function getBasePath({ request, params }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "context" >) {
+  const url = new URL(request.url);
+  const [ firstParams ] = Object.values( params )
+  if (!firstParams) {
     throw new Error("Value of first params is undefined")
   }
-  return url.pathname.split(params[0])[0].replace(/\/$/, "")
+  return url.pathname.split(firstParams[0])[0].replace(/\/$/, "")
 }
