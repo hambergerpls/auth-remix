@@ -1,5 +1,5 @@
 import { AuthConfig } from "@auth/core"
-import { Adapter } from "src/adapters.js"
+import { Adapter } from "../adapters.js"
 
 
 export type RemixAuthConfig = Omit<AuthConfig, "raw" | "adapter"> & {

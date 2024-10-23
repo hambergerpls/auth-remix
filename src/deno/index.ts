@@ -170,8 +170,8 @@ import {
 import type { Session } from "@auth/core/types"
 import { type LoaderFunction, type LoaderFunctionArgs, type ActionFunction, type ActionFunctionArgs, redirect } from "@remix-run/deno"
 import { BuiltInProviderType, ProviderType } from "../providers/index.js"
-import { setEnvDefaults } from "src/lib/utils.js"
-import { RemixAuthConfig } from "src/lib/types.js"
+import { setEnvDefaults } from "../lib/utils.js"
+import { RemixAuthConfig } from "../lib/types.js"
 
 export { customFetch }
 export { AuthError, CredentialsSignin } from "@auth/core/errors"
