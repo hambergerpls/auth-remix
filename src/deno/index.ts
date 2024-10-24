@@ -15,10 +15,18 @@
  * ## Usage
  *
  * ```ts title="src/lib/auth.server.ts"
+ * //src/lib/auth.server.ts
  * import Credentials from "auth-remix/providers/credentials";
- * import { RemixAuth } from "auth-remix";
- * export const { loader, action, getSession, signIn, signOut } = RemixAuth({ 
+ * import Google from "auth-remix/providers/google";
+ * import { RemixAuth } from "auth-remix/node"; // or cloudflare/deno
+ * export const { loader, action, getSession, getCsrfToken, signIn, signOut } = RemixAuth({ 
+ *   // adapter: (env) => D1Adapter(env.db) for cloudflare
+ *   // adapter: DrizzleAdapter(db, schema)
  *   providers: [
+ *     // clientId and secret will be impicitly set from env!
+ *     // e.g. AUTH_GOOGLE_ID & AUTH_GOOGLE_SECRET from env
+ *     // reference: https://authjs.dev/guides/environment-variables#environment-variable-inference
+ *     Google({}) 
  *     Credentials({
  *       id: "credentials",
  *       name: "Password",
@@ -48,6 +56,7 @@
  * ```
  *
  * ```ts title="src/routes/auth.$.ts"
+ * //src/routes/auth.$.ts
  * export { loader, action } from "~/lib/auth.server";
  * ```
  *
@@ -56,15 +65,15 @@
  *
  * ## Signing in and signing out
  * ```tsx title="src/routes/signin.tsx"
- *
+ * //src/routes/signin.tsx
  * import { BuiltInProviderType } from "@auth/core/providers";
- * import { json, ActionFunction, LoaderFunctionArgs } from "@remix-run/node";
+ * import { json, ActionFunction, LoaderFunctionArgs } from "@remix-run/node"; or cloudflare/deno
  * import { Form, useActionData, useLoaderData } from "@remix-run/react";
  * import { getCsrfToken, signIn } from "~/lib/auth.server";
  *
  *
- * export const loader = async ({ request }: LoaderFunctionArgs) => {
- *   const csrfTokenResponse = await getCsrfToken(request);
+ * export const loader = async ({ request, context }: LoaderFunctionArgs) => {
+ *   const csrfTokenResponse = await getCsrfToken({ request, context });
  *   if (!csrfTokenResponse.ok) {
  *     throw new Error("Error fetching csrf");
  *   }
@@ -72,9 +81,12 @@
  *   return json( { csrfToken }, { headers: csrfTokenResponse.headers } );
  * }
  *
- * export const action: ActionFunction = async ({ request }) => {
+ * export const action: ActionFunction = async ({ request, context }) => {
  *   const provider = ( await request.clone().formData() ).get("provider")
- *   const loginResponse = await signIn(request, provider as BuiltInProviderType ?? "credentials", { redirectTo: new URL( request.url ).searchParams.get("redirectTo") ?? "" });
+ *   const loginResponse = await signIn({ request, context }, provider as BuiltInProviderType ?? "credentials", { redirectTo: new URL( request.url ).searchParams.get("redirectTo") ?? "" });
+ *   if (!loginResponse.ok) {
+ *     return json({ error: ( await loginResponse.json() ).message })
+ *   }
  *   return loginResponse;
  * }
  *
@@ -104,12 +116,13 @@
  * This can be done via layout nesting as follows:
  *
  * ```ts title="src/routes/_protected.tsx"
- * import { json, LoaderFunctionArgs, redirect } from "@remix-run/node";
+ * //src/routes/_protected.tsx
+ * import { json, LoaderFunctionArgs, redirect } from "@remix-run/node"; or cloudflare/deno
  * import { Outlet } from "@remix-run/react";
  * import { getSession } from "~/lib/auth.server";
  *
- * export const loader = async ({ request }: LoaderFunctionArgs) => {
- *   const user = await getSession(request);
+ * export const loader = async ({ request, context }: LoaderFunctionArgs) => {
+ *   const user = await getSession({ request, context });
  *   if (!user || !user.user) {
  *     return redirect(`/signin?redirectTo=${request.url}`);
  *   }
@@ -123,8 +136,9 @@
  *
  * ### Per Route
  * ```ts title="src/routes/protected.ts"
- * export const loader = async ({ request }: LoaderFunctionArgs) => {
- *   const user = await getSession(request);
+ * //src/routes/protected.ts
+ * export const loader = async ({ request, context }: LoaderFunctionArgs) => {
+ *   const user = await getSession({ request, context });
  *   if (!user) {
  *     return redirect(`/`);
  *   }
@@ -136,12 +150,13 @@
  * You can access the session data from the parent layout as follows
  *
  * ```ts title="src/routes/_protected.profile.tsx"
+ * //src/routes/_protected.profile.tsx
  * import { Form, useMatches } from "@remix-run/react"
  * import { loader } from "./_protected";
- * import { SerializeFrom } from "@remix-run/node";
+ * import { SerializeFrom } from "@remix-run/node"; or cloudflare/deno
  * 
  * export default function ProfilePage() {
- *   const { user } = useMatches().find((e) => e.id === 'routes/_protected')?.data as SerializeFrom<typeof loader>;
+ *   const { user } = useRouteLoaderData<typeof loader>("routes/_protected");
  * 
  *   return (
  *     <div>

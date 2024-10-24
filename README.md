@@ -38,7 +38,8 @@ npm install auth-remix
  */
 
 import Credentials from "auth-remix/providers/credentials";
-import { RemixAuth } from "auth-remix/node";
+import Google from "auth-remix/providers/google";
+import { RemixAuth } from "auth-remix/node"; // or cloudflare/deno
 
 /**
  *  We import { RemixAuth } and call the function with a provider and destructure the object returned.
@@ -51,7 +52,13 @@ import { RemixAuth } from "auth-remix/node";
  *  { signOut } is a function to sign out a user.
  */
 export const { loader, action, getSession, getCsrfToken, signIn, signOut } = RemixAuth({ 
+  // adapter: (env) => D1Adapter(env.db) for cloudflare
+  // adapter: DrizzleAdapter(db, schema)
   providers: [
+    // clientId and secret will be impicitly set from env!
+    // e.g. AUTH_GOOGLE_ID & AUTH_GOOGLE_SECRET from env
+    // reference: https://authjs.dev/guides/environment-variables#environment-variable-inference
+    Google({}) 
     Credentials({
       id: "credentials",
       name: "Password",
@@ -98,7 +105,7 @@ On UNIX systems you can use `openssl rand -hex 32` or check out `https://generat
 ```tsx title="src/routes/signin.tsx"
 // src/routes/signin.tsx
 import { BuiltInProviderType } from "@auth/core/providers";
-import { json, ActionFunction, LoaderFunctionArgs } from "@remix-run/node";
+import { json, ActionFunction, LoaderFunctionArgs } from "@remix-run/node"; //or cloudflare/deno
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import { getCsrfToken, signIn } from "~/lib/auth.server";
 
@@ -108,8 +115,8 @@ import { getCsrfToken, signIn } from "~/lib/auth.server";
  *  will contain `Set-Cookie` headers that also contain the csrf token to
  *  be set on the browser cookie.
  */
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const csrfTokenResponse = await getCsrfToken(request);
+export const loader = async ({ request, context }: LoaderFunctionArgs) => {
+  const csrfTokenResponse = await getCsrfToken({ request, context });
   if (!csrfTokenResponse.ok) {
     throw new Error("Error fetching csrf");
   }
@@ -125,13 +132,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
  *  { redirectTo } option if we want to redirect the user to a
  *  specific page after authentication.
  */
-export const action: ActionFunction = async ({ request }) => {
+export const action: ActionFunction = async ({ request, context }) => {
   const provider = ( await request.clone().formData() ).get("provider")
   const loginResponse = await signIn(
-    request,
+    { request, context },
     provider as BuiltInProviderType ?? "credentials",
     { redirectTo: new URL( request.url ).searchParams.get("redirectTo") ?? "" }
   );
+  if (!loginResponse.ok) {
+    json({ error: ( await loginResponse.json() ).message })
+  }
   return loginResponse;
 }
 
@@ -166,7 +176,7 @@ This can be done via layout nesting as follows:
 
 ```tsx title="src/routes/_protected.tsx"
 // src/routes/_protected.tsx
-import { json, LoaderFunctionArgs, redirect } from "@remix-run/node";
+import { json, LoaderFunctionArgs, redirect } from "@remix-run/node"; //or cloudflare/deno
 import { Outlet } from "@remix-run/react";
 import { getSession } from "~/lib/auth.server";
 
@@ -211,7 +221,7 @@ You can access the session data from the parent layout as follows
 // src/routes/_protected.profile.tsx
 import { Form, useMatches } from "@remix-run/react"
 import { loader } from "./_protected";
-import { SerializeFrom } from "@remix-run/node";
+import { SerializeFrom } from "@remix-run/node"; //or cloudflare/deno
 
 
 /**
