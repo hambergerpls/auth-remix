@@ -186,8 +186,8 @@ import { getSession } from "~/lib/auth.server";
  *  user to a sign-in page if the user is not logged in, else we
  *  return the user data which is accessible by the children.
  */
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const user = await getSession(request);
+export const loader = async ({ request, context }: LoaderFunctionArgs) => {
+  const user = await getSession({ request, context });
   if (!user || !user.user) {
     return redirect(`/signin?redirectTo=${request.url}`);
   }
@@ -204,8 +204,8 @@ export default function ProtectedPage() {
 ```tsx title="src/routes/protected.tsx"
 import { getSession } from "~/lib/auth.server";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const user = await getSession(request);
+export const loader = async ({ request, context }: LoaderFunctionArgs) => {
+  const user = await getSession({ request, context });
   if (!user) {
     return redirect(`/`);
   }
