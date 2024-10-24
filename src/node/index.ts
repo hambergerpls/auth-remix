@@ -151,9 +151,8 @@
  *
  * ```ts title="src/routes/_protected.profile.tsx"
  * //src/routes/_protected.profile.tsx
- * import { Form, useMatches } from "@remix-run/react"
+ * import { Form, useRouteLoaderData } from "@remix-run/react"
  * import { loader } from "./_protected";
- * import { SerializeFrom } from "@remix-run/node"; or cloudflare/deno
  * 
  * export default function ProfilePage() {
  *   const { user } = useRouteLoaderData<typeof loader>("routes/_protected");

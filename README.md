@@ -219,18 +219,16 @@ You can access the session data from the parent layout as follows
 
 ```tsx title="src/routes/_protected.profile.tsx"
 // src/routes/_protected.profile.tsx
-import { Form, useMatches } from "@remix-run/react"
+import { Form, useRouteLoaderData } from "@remix-run/react"
 import { loader } from "./_protected";
-import { SerializeFrom } from "@remix-run/node"; //or cloudflare/deno
-
 
 /**
  *  We don't need to use { getSession } function to fetch the current user.
- *  We can use Remix { useMatches } to get the user data from the parent
+ *  We can use Remix { useRouteLoaderData } to get the user data from the parent
  *  layout by searching with route id.
  */
 export default function ProfilePage() {
-  const { user } = useMatches().find((e) => e.id === 'routes/_protected')?.data as SerializeFrom<typeof loader>;
+  const { user } = useRouteLoaderData<typeof loader>("routes/_protected");
 
   return (
     <div>
