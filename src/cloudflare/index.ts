@@ -19,14 +19,14 @@
  * import Credentials from "auth-remix/providers/credentials";
  * import Google from "auth-remix/providers/google";
  * import { RemixAuth } from "auth-remix/node"; // or cloudflare/deno
- * export const { loader, action, getSession, getCsrfToken, signIn, signOut } = RemixAuth({ 
+ * export const { loader, action, getSession, getCsrfToken, signIn, signOut } = RemixAuth({
  *   // adapter: (env) => D1Adapter(env.db) for cloudflare
  *   // adapter: DrizzleAdapter(db, schema)
  *   providers: [
  *     // clientId and secret will be impicitly set from env!
  *     // e.g. AUTH_GOOGLE_ID & AUTH_GOOGLE_SECRET from env
  *     // reference: https://authjs.dev/guides/environment-variables#environment-variable-inference
- *     Google({}) 
+ *     Google({})
  *     Credentials({
  *       id: "credentials",
  *       name: "Password",
@@ -128,7 +128,7 @@
  *   }
  *   return json({ user: user.user })
  * }
- * 
+ *
  * export default function ProtectedPage() {
  *   return <Outlet />
  * }
@@ -153,10 +153,10 @@
  * //src/routes/_protected.profile.tsx
  * import { Form, useRouteLoaderData } from "@remix-run/react"
  * import { loader } from "./_protected";
- * 
+ *
  * export default function ProfilePage() {
  *   const { user } = useRouteLoaderData<typeof loader>("routes/_protected");
- * 
+ *
  *   return (
  *     <div>
  *       <p>Name: {user.name}</p>
@@ -175,197 +175,81 @@
  * @module auth-remix/cloudflare
  */
 
+import { customFetch } from "@auth/core";
+import type { RemixAuthConfig } from "../lib/types.js";
 import {
-  Auth,
-  type AuthConfig,
-  createActionURL,
-  customFetch,
-} from "@auth/core"
-import type { Session } from "@auth/core/types"
-import { type LoaderFunction, type LoaderFunctionArgs, type ActionFunction, type ActionFunctionArgs, redirect } from "@remix-run/cloudflare"
-import { BuiltInProviderType, ProviderType } from "../providers/index.js"
-import { RemixAuthConfig } from "../lib/types.js"
-import { setEnvDefaults } from "../lib/utils.js"
+    loader,
+    action,
+    getCsrfToken,
+    getSession,
+    signIn,
+    signOut,
+} from "../core/index.js";
+import type {
+    LoaderFunctionArgs,
+    ActionFunctionArgs,
+    AppLoadContext,
+} from "@remix-run/cloudflare";
 
-export { customFetch }
-export { AuthError, CredentialsSignin } from "@auth/core/errors"
+export { customFetch };
+export { AuthError, CredentialsSignin } from "@auth/core/errors";
 export type {
-  Account,
-  DefaultSession,
-  Profile,
-  Session,
-  User,
-} from "@auth/core/types"
+    Account,
+    DefaultSession,
+    Profile,
+    Session,
+    User,
+} from "@auth/core/types";
+
+declare module "@remix-run/cloudflare" {
+    interface AppLoadContext {
+        cloudflare: {
+            env: Record<string, string>;
+        };
+    }
+}
 
 export function RemixAuth(config: RemixAuthConfig) {
-  const loader: LoaderFunction = async ({ request, params, context }) => {
-    // @ts-expect-error
-    await setEnvDefaults(context.cloudflare.env, config)
-    config.basePath = getBasePath({ request, params })
-    return await Auth(request, config as AuthConfig)
-  }
-
-  const action: ActionFunction = async ({ request, params, context }) => {
-    // @ts-expect-error
-    await setEnvDefaults(context.cloudflare.env, config)
-    config.basePath = getBasePath({ request, params })
-    return await Auth(request, config as AuthConfig)
-  }
-
-  const getCsrfToken = async (
-    { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
-  ): Promise<Response> => {
-    // @ts-expect-error
-    await setEnvDefaults(context.cloudflare.env, config)
-    const url = createActionURL(
-      "csrf",
-      request.headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
-      request.headers,
-      // @ts-expect-error
-      context.cloudflare.env,
-      config
-    )
-
-    const response = await Auth(
-      new Request(url),
-      config as AuthConfig
-    )
-
-    if (!response.ok) {
-      throw new Error(( await response.json<Error>() ).message)
-    }
-    return response;
-  }
-
-  const getSession = async (
-    { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
-  ): GetSessionResult => {
-    // @ts-expect-error
-    await setEnvDefaults(context.cloudflare.env, config)
-    const url = createActionURL(
-      "session",
-      request.headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
-      request.headers,
-      // @ts-expect-error
-      context.cloudflare.env,
-      config
-    )
-
-    const response = await Auth(
-      new Request(url, { headers: { cookie: request.headers.get("cookie") ?? "" } }),
-      config as AuthConfig
-    )
-
-    const { status = 200 } = response
-
-    const data = await response.json<Session | Error>()
-
-    if (!data || !Object.keys(data).length) return null
-    if (status === 200) return data as Session
-    throw new Error(( data as Error ).message)
-  }
-
-
-  const signIn = async (
-    { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
-    provider?: BuiltInProviderType,
-    options: ({ redirectTo?: string }) = {},
-    authorizationParams?: string[][] | Record<string, string> | string | URLSearchParams,
-  ) => {
-    // @ts-expect-error
-    await setEnvDefaults(context.cloudflare.env, config)
-    const headers = new Headers(request.headers)
-    const {
-      redirectTo,
-    } = options
-
-    const callbackUrl = redirectTo?.toString() ?? headers.get("Referer") ?? "/"
-    const signInURL = createActionURL(
-      "signin",
-      headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
-      headers,
-      // @ts-expect-error
-      context.cloudflare.env,
-      config
-    )
-
-    if (!provider) {
-      signInURL.searchParams.append("callbackUrl", callbackUrl)
-      return redirect(signInURL.toString())
-    }
-
-    let url = `${signInURL}/${provider}?${new URLSearchParams(
-authorizationParams
-)}`
-    let foundProvider: { id?: BuiltInProviderType; type?: ProviderType } = {}
-
-    for (const providerConfig of config.providers) {
-      const { options, ...defaults } =
-        typeof providerConfig === "function" ? providerConfig() : providerConfig
-      const id = (options?.id as string | undefined) ?? defaults.id
-      if (id === provider) {
-        foundProvider = {
-          id,
-          type: (options?.type as ProviderType | undefined) ?? defaults.type,
-        }
-        break
-      }
-    }
-
-    if (!foundProvider.id) {
-      const url = `${signInURL}?${new URLSearchParams({ callbackUrl })}`
-      return redirect(url)
-    }
-
-    if (foundProvider.type === "credentials") {
-      url = url.replace("signin", "callback")
-    }
-
-    headers.set("Content-Type", "application/x-www-form-urlencoded")
-    const body = new URLSearchParams({ ...Object.fromEntries(await request.formData()), callbackUrl })
-    const newReq = new Request(url, { method: "POST", headers, body })
-    const res = await Auth(newReq, { ...config as AuthConfig })
-
-    return res
-  }
-
-  const signOut = async (
-  { request, context }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "params" >,
-  options: { redirectTo?: string } = {},
-) => {
-  // @ts-expect-error
-  await setEnvDefaults(context.cloudflare.env, config)
-  const headers = new Headers( request.headers )
-  headers.set("Content-Type", "application/x-www-form-urlencoded")
-
-  const url = createActionURL(
-    "signout",
-    headers.get("x-forwarded-proto") ?? new URL( request.url ).protocol,
-    headers,
-    // @ts-expect-error
-    context.cloudflare.env,
-    config
-  )
-  const callbackUrl = options?.redirectTo ?? headers.get("Referer") ?? "/"
-  const body = new URLSearchParams({ ...Object.fromEntries(await request.formData()), callbackUrl })
-  const newReq = new Request(url, { method: "POST", headers, body })
-
-  const res = await Auth(newReq, { ...config as AuthConfig })
-
-  return res
-}
-
-  return { loader, action, getSession, getCsrfToken, signIn, signOut }
-}
-
-export type GetSessionResult = Promise<Session | null>
-
-
-export function getBasePath({ request, params }: Omit< LoaderFunctionArgs | ActionFunctionArgs, "context" >) {
-  const url = new URL(request.url);
-  const [ firstParams ] = Object.values( params )
-  if (!firstParams) {
-    throw new Error("Value of first params is undefined")
-  }
-  return url.pathname.split(firstParams[0])[0].replace(/\/$/, "")
+    return {
+        loader: (args: LoaderFunctionArgs | ActionFunctionArgs) => {
+            return loader(config, args.context.cloudflare.env)(args);
+        },
+        action: (args: LoaderFunctionArgs | ActionFunctionArgs) => {
+            return action(config, args.context.cloudflare.env)(args);
+        },
+        getSession: (
+            args: Omit<LoaderFunctionArgs | ActionFunctionArgs, "params">,
+        ) => {
+            return getSession(config, args.context.cloudflare.env)(args);
+        },
+        getCsrfToken: (
+            args: Omit<LoaderFunctionArgs | ActionFunctionArgs, "params">,
+        ) => {
+            return getCsrfToken(config, args.context.cloudflare.env)(args);
+        },
+        signIn: (
+            args: Pick<
+                LoaderFunctionArgs | ActionFunctionArgs,
+                "request" | "context"
+            >,
+            opt: Parameters<ReturnType<typeof signIn>>[1],
+        ) => {
+            return signIn(
+                config,
+                (args.context as AppLoadContext).cloudflare.env,
+            )(args, opt);
+        },
+        signOut: (
+            args: Pick<
+                LoaderFunctionArgs | ActionFunctionArgs,
+                "request" | "context"
+            >,
+            opt?: Parameters<ReturnType<typeof signIn>>[1],
+        ) => {
+            return signOut(
+                config,
+                (args.context as AppLoadContext).cloudflare.env,
+            )(args, opt);
+        },
+    };
 }
