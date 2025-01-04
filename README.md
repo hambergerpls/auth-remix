@@ -1,6 +1,4 @@
-# auth-remix (Remix Auth) (Experimental)
-
-`auth-remix` is currently experimental. The API _will_ change in the future.
+# auth-remix (Remix Auth)
 
 Remix Auth is the community Remix integration for Auth.js.
 It provides a simple way to add authentication to your Remix app in a few lines of code.
@@ -13,8 +11,8 @@ It provides a simple way to add authentication to your Remix app in a few lines 
 - [x] `examples/node`
 - [ ] `examples/cloudflare`
 - [ ] `examples/deno`
-- [ ] Tests for `auth-remix/node`
-- [ ] Tests for `auth-remix/cloudflare`
+- [x] Tests for `auth-remix/node`
+- [x] Tests for `auth-remix/cloudflare`
 - [ ] Tests for `auth-remix/deno`
 - [x] Credentials example
 - [ ] OAuth example
@@ -115,6 +113,7 @@ import { getCsrfToken, signIn } from "~/lib/auth.server";
  *  will contain `Set-Cookie` headers that also contain the csrf token to
  *  be set on the browser cookie.
  */
+// context is not required for auth-remix/node & deno but required for cloudflare
 export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   const csrfTokenResponse = await getCsrfToken({ request, context });
   if (!csrfTokenResponse.ok) {
@@ -132,12 +131,14 @@ export const loader = async ({ request, context }: LoaderFunctionArgs) => {
  *  { redirectTo } option if we want to redirect the user to a
  *  specific page after authentication.
  */
+// context is not required for auth-remix/node & deno but required for cloudflare
 export const action: ActionFunction = async ({ request, context }) => {
   const provider = ( await request.clone().formData() ).get("provider")
   const loginResponse = await signIn(
     { request, context },
-    provider as BuiltInProviderType ?? "credentials",
-    { redirectTo: new URL( request.url ).searchParams.get("redirectTo") ?? "" }
+    { 
+      provider: provider as BuiltInProviderType ?? "credentials",
+      redirectTo: new URL( request.url ).searchParams.get("redirectTo") ?? "" }
   );
   if (!loginResponse.ok) {
     json({ error: ( await loginResponse.json() ).message })
@@ -186,6 +187,7 @@ import { getSession } from "~/lib/auth.server";
  *  user to a sign-in page if the user is not logged in, else we
  *  return the user data which is accessible by the children.
  */
+// context is not required for auth-remix/node & deno but required for cloudflare
 export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   const user = await getSession({ request, context });
   if (!user || !user.user) {
@@ -204,6 +206,7 @@ export default function ProtectedPage() {
 ```tsx title="src/routes/protected.tsx"
 import { getSession } from "~/lib/auth.server";
 
+// context is not required for auth-remix/node & deno but required for cloudflare
 export const loader = async ({ request, context }: LoaderFunctionArgs) => {
   const user = await getSession({ request, context });
   if (!user) {
