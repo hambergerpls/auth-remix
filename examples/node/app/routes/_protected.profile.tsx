@@ -1,7 +1,5 @@
-import { Form, useMatches } from "@remix-run/react"
-import { loader } from "./_protected";
-import { SerializeFrom } from "@remix-run/node";
-
+import { Form, useRouteLoaderData } from "@remix-run/react";
+import type { loader } from "./_protected";
 
 /**
  *  We don't need to use { getSession } function to fetch the current user.
@@ -9,17 +7,17 @@ import { SerializeFrom } from "@remix-run/node";
  *  layout by searching with route id.
  */
 export default function ProfilePage() {
-  const { user } = useMatches().find((e) => e.id === 'routes/_protected')?.data as SerializeFrom<typeof loader>;
+    const { user } = useRouteLoaderData<typeof loader>("routes/_protected")!;
 
-  return (
-    <div>
-      <p>Name: {user.name}</p>
-      <p>Email: {user.email}</p>
-      <img src={user.image ?? ""} />
-      <p>Raw: {JSON.stringify(user)}</p>
-      <Form method="GET" action="/signout">
-        <button type="submit">Sign Out</button>
-      </Form>
-    </div>
-  )
+    return (
+        <div>
+            <p>Name: {user.name}</p>
+            <p>Email: {user.email}</p>
+            <img src={user.image ?? ""} />
+            <p>Raw: {JSON.stringify(user)}</p>
+            <Form method="GET" action="/signout">
+                <button type="submit">Sign Out</button>
+            </Form>
+        </div>
+    );
 }

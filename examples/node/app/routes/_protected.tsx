@@ -1,4 +1,4 @@
-import { json, LoaderFunctionArgs, redirect } from "@remix-run/node";
+import { type LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { Outlet } from "@remix-run/react";
 import { getSession } from "~/lib/auth.server";
 
@@ -9,13 +9,13 @@ import { getSession } from "~/lib/auth.server";
  *  return the user data which is accessible by the children.
  */
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const user = await getSession(request);
-  if (!user || !user.user) {
-    return redirect(`/signin?redirectTo=${request.url}`);
-  }
-  return json({ user: user.user })
-}
+    const user = await getSession({ request });
+    if (!user || !user.user) {
+        return redirect(`/signin?redirectTo=${request.url}`);
+    }
+    return { user: user.user };
+};
 
 export default function ProtectedPage() {
-  return <Outlet />
+    return <Outlet />;
 }
